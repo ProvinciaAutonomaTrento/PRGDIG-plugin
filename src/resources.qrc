@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="/plugins/prg_dig">
+    <file>fix.png</file>
+    <file>icon.png</file>
+  </qresource>
+</RCC>

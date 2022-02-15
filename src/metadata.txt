@@ -11,9 +11,9 @@ description=Template for PRG design
 about=This plugins hadles automatic validation of geometries used to design a PRG
 version=1.0
 author=Massimo Endrighi
-email=prgdig@geopartner.it
-tracker=https://github.com/endmax/PRGDIG
-repository=https://github.com/endmax/PRGDIG
+email=massimo.endrighi@geopartner.it
+tracker=https://github.com/ProvinciaAutonomaTrento/PRGDIG-plugin
+repository=https://github.com/ProvinciaAutonomaTrento/PRGDIG-plugin
 
 # End of mandatory metadata
 
@@ -26,7 +26,7 @@ hasProcessingProvider=no
 # Tags are comma separated with spaces allowed
 tags=spatialite prg
 
-homepage=https://github.com/endmax/PRGDIG
+homepage=https://github.com/ProvinciaAutonomaTrento/PRGDIG-plugin
 icon=icon.png
 # experimental flag
 experimental=False

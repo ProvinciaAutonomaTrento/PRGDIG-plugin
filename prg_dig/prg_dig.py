@@ -167,7 +167,7 @@ class PrgDig:
             self.toolbar.addAction(action)
 
         if add_to_menu:
-            self.iface.addPluginToMenu(
+            self.iface.addPluginToVectorMenu(
                 self.menu,
                 action)
 
@@ -211,7 +211,7 @@ class PrgDig:
         #print "** UNLOAD PrgDig"
 
         for action in self.actions:
-            self.iface.removePluginMenu(
+            self.iface.removePluginVectorMenu(
                 self.tr(u'&PrgDig'),
                 action)
             self.iface.removeToolBarIcon(action)
@@ -635,7 +635,7 @@ class PrgDig:
 
         try:
             conn = self.getConnection(True)
-            conn.execute(fixGeomSQLcommand)
+            conn.executescript(fixGeomSQLcommand)
 
             # cancellazion dell'errore
             conn.execute('DELETE FROM ' + tableName + ' WHERE Oid=' + str(oid))
@@ -643,9 +643,19 @@ class PrgDig:
             conn.commit()
             conn.close()
 
-            # rimuove l'elemento corrente dalla lista
+            # rimuove l'elemento corrente dalla lista ed aggiorna conteggio errori
             currentItem = self.dockwidget.treeWidget.currentItem()
-            currentItem.parent().removeChild(currentItem)
+            parent = currentItem.parent()
+            parent.removeChild(currentItem)
+            errorsCount = parent.childCount()
+            if errorsCount == 0:
+                parent.setText(1, None)
+            else:
+                parent.setText(1, str(errorsCount))
+
+            # aggiorna la visualizzazione del layer degli errori
+            self.poligonErrorsLayer().triggerRepaint()
+            self.iface.mapCanvas().refresh()
 
         except Exception as e:
             if conn != None:
@@ -1077,6 +1087,8 @@ class PrgDig:
 
             # aggiorna la visualizzazione del layer degli errori
             self.poligonErrorsLayer().triggerRepaint()
+        elif callBackInfo.objectType == 'Rule' and callBackInfo.status =='Success':
+            item.setText(1,None)
 
         if callBackInfo.status == 'Begin':
             item.setData(0,Qt.ForegroundRole,QBrush(QColor('darkyellow')))

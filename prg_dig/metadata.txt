@@ -24,7 +24,7 @@ hasProcessingProvider=no
 # changelog=
 
 # Tags are comma separated with spaces allowed
-tags=spatialite prg
+# tags=spatialite
 
 homepage=https://github.com/ProvinciaAutonomaTrento/PRGDIG-plugin
 icon=icon.png

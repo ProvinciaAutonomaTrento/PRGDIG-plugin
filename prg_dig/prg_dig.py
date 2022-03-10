@@ -21,11 +21,11 @@
  *                                                                         *
  ***************************************************************************/
 """
-from qgis.PyQt.QtSql import QSqlQueryModel,QSqlDatabase,QSqlQuery
-from qgis.PyQt import QtGui, QtWidgets
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt, pyqtSignal, pyqtSlot, QThreadPool,QTimer,QObject,QItemSelectionModel
-from qgis.PyQt.QtGui import QIcon,QBrush,QColor,QFont
-from qgis.PyQt.QtWidgets import QAction,QHeaderView,QMessageBox,QInputDialog 
+from qgis.PyQt.QtGui import QStandardItemModel, QStandardItem
+from qgis.PyQt import  QtWidgets
+from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt, QThreadPool
+from qgis.PyQt.QtGui import QIcon, QBrush, QColor, QFont
+from qgis.PyQt.QtWidgets import QAction, QMessageBox, QInputDialog 
 from qgis.core import QgsRectangle, QgsProject, QgsMessageLog
 
 # Initialize Qt resources from file resources.py
@@ -251,7 +251,7 @@ class PrgDig:
             try:                
                 self.initialize()
             except Exception as e:
-                QgsMessageLog.logMessage('Unexpected error ' + str(e))
+                QgsMessageLog.logMessage('Unexpected error in function run: ' + str(e))
 
     #--------------------------------------------------------------------------
     # custom code
@@ -346,13 +346,42 @@ class PrgDig:
     def removeIgnoredErrorPushButton(self):
         self.logFunctionStart()
         if QMessageBox.question(None,'Errori Ignorati','Confermi il ripristiono degli errori ignorati selezionati?') != QMessageBox.Yes:
+            self.logFunctionEnd()
             return
-           
+
+        model = self.dockwidget.ignoredErrorsTableView.model()
+
         conn = self.getConnection()
-        for row in self.dockwidget.ignoredErrorsTableView.selectionModel().selectedRows():
-            conn.execute('DELETE FROM ErroriIgnorati WHERE Oid=' + str(row.value('Oid')))
+        for selectedRow in self.dockwidget.ignoredErrorsTableView.selectionModel().selectedRows():
+            oid = model.item(selectedRow.row(),0).text()
+            result = conn.execute('SELECT Oid, Out_RuleReportTableName, OidRegola, OidGeom1, OidGeom2, OidGeometry, OidAttributo FROM ErroriIgnorati WHERE Oid=' + oid).fetchone()
+            
+            tableName = result['Out_RuleReportTableName']
+            if tableName == 'Out_RuleReportAttributes':
+                oidErrore = conn.execute('SELECT Oid FROM ' + tableName + ' WHERE OidRegola = ? AND OidGeometry = ? AND OidAttributo = ?',
+                (result['OidRegola'],result['OidGeometry'],result['OidAttributo'])).fetchone()[0]
+            else:
+                oidErrore = conn.execute('SELECT Oid FROM ' + tableName + ' WHERE OidRegola = ? AND OidGeom1 = ? AND OidGeom2 = ?',
+                (result['OidRegola'],result['OidGeom1'],result['OidGeom2'])).fetchone()[0]
+
+            # aggiornamento dell'errore ignorato sul tree delle regole di validazione
+            topLevelItem = self.dockwidget.treeWidget.topLevelItem(0)
+            ruleItem = self.findItem(topLevelItem,'Rule',result['OidRegola'])
+
+            for i in range(ruleItem.childCount()):
+                errorItem = ruleItem.child(i)
+                if errorItem.data(0,Qt.UserRole).startswith(tableName + ';' + str(oidErrore)):
+                    errorItem.setData(0,Qt.FontRole,QFont())
+                    break
+
+            conn.execute('DELETE FROM ErroriIgnorati WHERE Oid=' + oid)
+
         conn.commit()
-        conn.close()   
+        conn.close()
+
+        # simula cambio tab per ricaricare elenco errori ignorati
+        self.tabChanged(1)
+
         self.logFunctionEnd()
 
     def ignoredErrorsSelectionChanged(self,selected,deselected):
@@ -389,32 +418,29 @@ class PrgDig:
             return
 
         model = self.dockwidget.ignoredErrorsTableView.model()
-        record = model.record(currentModelIndex.row())
-        tableName = record.value('Out_RuleReportTableName')
-        oidRegola = record.value('OidRegola')
-        oidGeometry = record.value('OidGeometry')
+        row = currentModelIndex.row()
+
+        oid = model.item(row,0).text()
+        tableName = model.item(row,1).text()
+        oidRegola = model.item(row,2).text()
+        oidGeom1 = model.item(row,3).text()
+        oidGeom2 = model.item(row,4).text()
+        oidGeometry = model.item(row,5).text()
+        oidAttributo = model.item(row,6).text()
         conn = self.getConnection()
+        query = ''
         if tableName == 'Out_RuleReportAttributes':
-            result = conn.execute((
-                'SELECT Oid FROM ' + tableName + ' '
-                'WHERE '
-                    'OidRegola=' + str(oidRegola) + ' AND ' 
-                    'OidGeometry=' + str(oidGeometry) + ' AND '
-                    'OidAttributo=' + str(record.value('OidAttributo')) )).fetchone()
+            query = 'SELECT Oid FROM ' + tableName + ' WHERE OidRegola=' + oidRegola + ' AND OidGeometry=' + oidGeometry + ' AND OidAttributo=' + oidAttributo
         else:
-            result = conn.execute((
-                'SELECT Oid FROM ' + tableName + ' '
-                'WHERE '
-                    'OidRegola=' + str(oidRegola) + ' AND ' 
-                    'OidGeom1=' + str(oidGeometry) )).fetchone()
-        
+            query = 'SELECT Oid FROM ' + tableName + ' WHERE OidRegola=' + oidRegola + ' AND OidGeom1=' + oidGeom1 + ' AND OidGeom2=' + oidGeom2
+                    
+        result = conn.execute(query).fetchone()
         if result == None:
             QMessageBox.critical(None,'Errori Ignorati',"L'errore selezionato non è stato trovato nell'elenco degli errori." + os.linesep + 'Verrà rimosso anche da questa lista')
-            conn.execute('DELETE FROM ErroriIgnorati WHERE Oid=' + str(record.value('Oid')))
+            conn.execute('DELETE FROM ErroriIgnorati WHERE Oid=' + oid)
             conn.commit()
             conn.close()
             # simula cambio tab per ricaricare elenco errori ignorati
-            # questo è necessario perchè QSqlQueryModel non permette di cancellare
             self.tabChanged(1)
             return
 
@@ -473,20 +499,21 @@ class PrgDig:
         try:         
             conn = self.getConnection()
             tableName = self.selectedError['TableName']
+            command = 'INSERT OR REPLACE INTO ErroriIgnorati (Out_RuleReportTableName,OidRegola,OidGeom1,OidGeom2,OidGeometry,OidAttributo,Motivo) VALUES (?,?,?,?,?,?,?)'
+            values = ()
+
+            # I valori mancanti vengono forzati a 0 anziché lasciato a NULL per poter usufruire
+            # della clausola INSERT OR REPLACE che permette all'utente di ignorare N volte l'errore
+            # con lo scopo di aggiornare il motivo.
+            # Questo meccanismo usa un indice univoco sui campi OidRegola,OidGeom1,OidGeom2,OidGeometry,OidAttributo
+            # che vista la particolartià di SQLITE che tratta, in questo caso specifico, i NULL come valori distinti
+            # allora è necessario mettere uno 0
+
             if tableName == 'Out_RuleReportAttributes':
-                conn.execute (
-                    'INSERT OR REPLACE INTO ErroriIgnorati (Out_RuleReportTableName,OidRegola,OidGeometry,OidAttributo,Motivo) VALUES (?,?,?,?,?)',
-                    (tableName,self.selectedError['OidRegola'],self.selectedError['OidGeometry'],self.selectedError['OidAttributo'], motivo))
+                values = (tableName,self.selectedError['OidRegola'],0,0,self.selectedError['OidGeometry'],self.selectedError['OidAttributo'], motivo)
             else:
-                # l'OidAttributo viene forzato a 0 anziché lasciato a NULL per poter usufruire
-                # della clausola INSERT OR REPLACE che permette all'utente di ignorare N volte l'errore
-                # con lo scopo di aggiornare il motivo.
-                # Questo meccanismo usa un indice univoco sui tre campi OidRegola,OidGeometry,OidAttributo
-                # che vista la particolartià di SQLITE che tratta, in questo caso specifico,  i NULL come valori distinti
-                # allora è necessario mettere uno 0
-                conn.execute (
-                    'INSERT OR REPLACE INTO ErroriIgnorati (Out_RuleReportTableName,OidRegola,OidGeometry,OidAttributo,Motivo) VALUES (?,?,?,?,?)',
-                    (tableName,self.selectedError['OidRegola'],self.selectedError['OidGeom1'],0, motivo))
+                values = (tableName,self.selectedError['OidRegola'],self.selectedError['OidGeom1'],self.selectedError['OidGeom2'],0,0, motivo)
+            conn.execute (command,values)
             conn.commit()
             conn.close()
 
@@ -496,7 +523,7 @@ class PrgDig:
             if conn != None:
                 conn.close()
             QMessageBox.critical(None,'Ignora errore','Si è verificato un errore imprevisto')
-            QgsMessageLog.logMessage('Unexpected error ' + str(e))
+            QgsMessageLog.logMessage('Unexpected error in function ignoreCurrentError: ' + str(e))
 
     def newProjectCreated(self):
         """Evento generato in caso di cambio progetto"""
@@ -564,7 +591,7 @@ class PrgDig:
                     command = (
                         'SELECT t.Oid,TipoMessaggio,Messaggio, ee.oid IS NOT NULL AS ErroreIgnorato '
                         'FROM ' + table + ' t '
-                        'LEFT JOIN ErroriIgnorati ee ON t.OidRegola = ee.OidRegola AND t.OidGeom1 = ee.OidGeometry '
+                        'LEFT JOIN ErroriIgnorati ee ON t.OidRegola = ee.OidRegola AND t.OidGeom1 = ee.OidGeom1 AND t.OidGeom2 = ee.OidGeom2 '
                         'WHERE t.OidRegola = ' + str(regola['Oid']))
                 errors = conn.execute(command).fetchall()
                 if len(errors):
@@ -576,7 +603,7 @@ class PrgDig:
                             error_Item.setData(0,Qt.ForegroundRole,QBrush(QColor('orange')))
                         if error['ErroreIgnorato']:
                             error_Item.setData(0,Qt.FontRole,self.strikeOutFont)
-                        error_Item.setData(0,Qt.UserRole,table + ';' + str(error['Oid']) + ';' + str(regola['ErroriIgnorabili']))
+                        error_Item.setData(0,Qt.UserRole,table + ';' + str(error['Oid']) + ';' + str(regola['ErroriIgnorabili']) + ';' + str(error['ErroreIgnorato']))
                         regola_Item.addChild(error_Item)
                 else:
                     regola_Item.setText(1,'')
@@ -589,18 +616,33 @@ class PrgDig:
         try:
             QgsMessageLog.logMessage('tabChanged (tabIndex=' + str(tabIndex) + ')')
             if tabIndex == 1:
-                db = QSqlDatabase.addDatabase("QSQLITE")
-                db.setDatabaseName(self.spatialiteTemplateName)
-                db.open()
-                queryString = (
-                    'SELECT ee.Oid, ee.Out_RuleReportTableName, ee.OidRegola, ee.OidGeometry, ee.OidAttributo, Regole.Nome AS Regola, ee.Motivo '
-                    'FROM ErroriIgnorati ee '
-                    'INNER JOIN Regole ON Regole.Oid = OidRegola')
-                query = QSqlQuery(queryString,db)
-                dataModel = QSqlQueryModel()
-                dataModel.setQuery(query)
-                self.dockwidget.ignoredErrorsTableView.setModel(dataModel)
+                conn = self.getConnection()
 
+                # caricamento degli errori ignorati
+                queryString = (
+                    'SELECT ee.Oid, ee.Out_RuleReportTableName, ee.OidRegola, ee.OidGeom1, ee.OidGeom2, ee.OidGeometry, ee.OidAttributo, Regole.Nome AS Regola, ee.Motivo '
+                    'FROM ErroriIgnorati ee '
+                    'INNER JOIN Regole ON Regole.Oid = ee.OidRegola')
+                ignoredErrors = conn.execute(queryString).fetchall()
+                
+                # inserimento in un data model per la visualizzazione in griglia
+                dataModel = QStandardItemModel (len(ignoredErrors),8)
+                columnNames = ['Oid','Out_RuleReportTableName', 'OidRegola', 'OidGeom1', 'OidGeom2', 'OidGeometry', 'OidAttributo', 'Regola', 'Motivo']
+                dataModel.setHorizontalHeaderLabels(columnNames)
+
+                row = 0
+                for ignoredError in ignoredErrors:
+                    col = 0
+                    for columnName in columnNames:
+                        item = QStandardItem(str(ignoredError[columnName]))
+                        dataModel.setItem(row,col,item)
+                        col = col + 1
+                    row = row + 1
+                    
+                self.dockwidget.ignoredErrorsTableView.setModel(dataModel)
+                
+                QgsMessageLog.logMessage(str(dataModel.rowCount()) + ' errori ignorati')
+                
                 selectionModel = self.dockwidget.ignoredErrorsTableView.selectionModel()
                 selectionModel.currentChanged.connect(self.currentIgnoredErrorChanged)
                 selectionModel.selectionChanged.connect(self.ignoredErrorsSelectionChanged)
@@ -610,14 +652,16 @@ class PrgDig:
                 self.dockwidget.ignoredErrorsTableView.setColumnHidden(2, True)
                 self.dockwidget.ignoredErrorsTableView.setColumnHidden(3, True)
                 self.dockwidget.ignoredErrorsTableView.setColumnHidden(4, True)
+                self.dockwidget.ignoredErrorsTableView.setColumnHidden(5, True)
+                self.dockwidget.ignoredErrorsTableView.setColumnHidden(6, True)
                 
                 # https://doc.qt.io/qt-5/qheaderview.html#ResizeMode-enum
                 self.dockwidget.ignoredErrorsTableView.horizontalHeader().setStretchLastSection(True)
                 self.dockwidget.ignoredErrorsTableView.horizontalHeader().setSectionResizeMode(1)
                 self.dockwidget.ignoredErrorsTableView.resizeRowsToContents()
-                db.close()
+                conn.close()
         except Exception as e:
-            QgsMessageLog.logMessage('Unexpected error ' + str(e))
+            QgsMessageLog.logMessage('Unexpected error in function tabChanged: ' + str(e))
 
     def fixGeom1(self):
         QgsMessageLog.logMessage('fixGeom1')
@@ -660,7 +704,7 @@ class PrgDig:
         except Exception as e:
             if conn != None:
                 conn.close()
-            QgsMessageLog.logMessage('Unexpected error ' + str(e))
+            QgsMessageLog.logMessage('Unexpected error in function fixGeom: ' + str(e))
             QMessageBox.critical(None,self.selectedError['FixErrorMessage'],'Errore imprevisto nell''esecuzione del comando')
 
     def zoomGeom(self):
@@ -696,7 +740,7 @@ class PrgDig:
         except Exception as e:
             if conn != None:
                 conn.close()
-            QgsMessageLog.logMessage('Unexpected error ' + str(e))
+            QgsMessageLog.logMessage('Unexpected error in function zoomGeometry: ' + str(e))
             QMessageBox.critical(None,self.selectedError['FixErrorMessage'],'Errore imprevisto nell''esecuzione del comando')
 
     def startValidationButtonClicked(self):
@@ -749,7 +793,7 @@ class PrgDig:
         tokens = userData.split(';')
         table = tokens[0]
         oid = tokens[1]
-        if len(tokens) == 3:
+        if len(tokens) == 4:
             canIgnoreError = userData.split(';')[2] == '1'
         else:
             canIgnoreError = None
@@ -958,10 +1002,6 @@ class PrgDig:
         
         conn = self.getConnection(True)
 
-        # errori che l'utente ha deciso di ignorare
-        # servono per barrare gli errori in lista
-        ignoredErrors =  conn.execute('SELECT Oid,OidRegola,OidGeometry,OidAttributo FROM ErroriIgnorati').fetchall()
-
         # Esecuzione delle regole di validazione per ogni iter di validazione (solitamente 1 solo iter)
         # Le regole sono predisposte nell'ordine corretto dal builder
         iters = conn.execute('SELECT Oid,Nome FROM IterValidazione').fetchall()
@@ -995,7 +1035,7 @@ class PrgDig:
                     except Exception as e:
                         progress_callback.emit(CallBackInfo('Step',step['Oid'],'UnexpectedError'))
                         QgsMessageLog.logMessage('Unexpected error executing ' + step['SQLCommand'])
-                        QgsMessageLog.logMessage('Unexpected error ' + str(e))
+                        QgsMessageLog.logMessage('Unexpected error in function validate: ' + str(e))
 
                     progress_callback.emit(CallBackInfo('Step',step['Oid'],'End'))
 
@@ -1007,6 +1047,21 @@ class PrgDig:
                 table = regola['OutReportTableName']
 
                 errors = conn.execute('SELECT Oid,TipoMessaggio,Messaggio FROM ' + table + ' WHERE OidRegola = ' + str(regola['Oid'])).fetchall()
+                if table == 'Out_RuleReportAttributes':
+                    command = (
+                        'SELECT t.Oid,TipoMessaggio,Messaggio, ee.oid IS NOT NULL AS ErroreIgnorato '
+                        'FROM ' + table + ' t '
+                        'LEFT JOIN ErroriIgnorati ee ON t.OidRegola = ee.OidRegola AND t.OidGeometry = ee.OidGeometry AND t.OidAttributo = ee.OidAttributo '
+                        'WHERE t.OidRegola = ' + str(regola['Oid']))
+                else:
+                    command = (
+                        'SELECT t.Oid,TipoMessaggio,Messaggio, ee.oid IS NOT NULL AS ErroreIgnorato '
+                        'FROM ' + table + ' t '
+                        'LEFT JOIN ErroriIgnorati ee ON t.OidRegola = ee.OidRegola AND t.OidGeom1 = ee.OidGeom1 AND t.OidGeom2 = ee.OidGeom2 '
+                        'WHERE t.OidRegola = ' + str(regola['Oid']))
+
+                errors = conn.execute(command).fetchall()
+
                 if len(errors) == 0:
                     progress_callback.emit(CallBackInfo('Rule', regola['Oid'],'Success'))
                 else:
@@ -1014,7 +1069,7 @@ class PrgDig:
                     error_info.error_table = table
                     error_info.errors = []
                     for error in errors:
-                       error_info.errors.append((error['Oid'],error['Messaggio'],error['TipoMessaggio'],regola['ErroriIgnorabili']))
+                       error_info.errors.append((error['Oid'],error['Messaggio'],error['TipoMessaggio'],regola['ErroriIgnorabili'],error['ErroreIgnorato']))
                     # non è possibile passare un vettore nei parametri della callback
                     # e quindi viene convertito in json
                     error_info.errors = json.dumps(error_info.errors)
@@ -1072,15 +1127,19 @@ class PrgDig:
             item.takeChildren()
             self.dockwidget.ruleProgressBar.setMaximum(0)
         elif callBackInfo.objectType == 'Rule' and callBackInfo.status =='Error':
-            # ogni errore è una quadrupla con (oid,messaggio,tipo messaggio,errore ignorabile)
+            # ogni errore è una cinquina con (oid,messaggio,tipo messaggio,errore ignorabile, errore ignorato)
             errors = json.loads(callBackInfo.errors)
             error_Items = []
             for error in errors:
                 error_Item = QtWidgets.QTreeWidgetItem([error[1]])
-                error_Item.setData(0,Qt.UserRole,callBackInfo.error_table + ';' + str(error[0]) + ';' + str(error[3]))
+                error_Item.setData(0,Qt.UserRole,callBackInfo.error_table + ';' + str(error[0]) + ';' + str(error[3]) + ';' + str(error[4]))
                 if error[2] == 'W':
                     # questo è un warning
-                    item.setData(0,Qt.ForegroundRole,QBrush(QColor('orange')))
+                    error_Item.setData(0,Qt.ForegroundRole,QBrush(QColor('orange')))
+                if error[4] == True:
+                    # questo è un errore ignorato
+                    error_Item.setData(0,Qt.FontRole,self.strikeOutFont)
+
                 error_Items.append(error_Item)
             item.addChildren(error_Items)
             item.setText(1,str(len(errors)))

@@ -18,7 +18,7 @@
   </property>
   <widget class="QWidget" name="dockWidgetContents">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0">
+    <item row="0" column="1">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
        <number>0</number>
@@ -29,28 +29,9 @@
        </attribute>
        <layout class="QGridLayout" name="gridLayout_6">
         <item row="1" column="0">
-         <widget class="QTreeWidget" name="treeWidget">
-          <column>
-           <property name="text">
-            <string notr="true">1</string>
-           </property>
-          </column>
-         </widget>
-        </item>
-        <item row="7" column="0">
-         <widget class="QProgressBar" name="ruleProgressBar">
-          <property name="value">
-           <number>0</number>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="8" column="0">
-         <widget class="QPushButton" name="startValidationPushButton">
+         <widget class="QPushButton" name="selectAllRulesPushButton">
           <property name="text">
-           <string>Esegui validazione</string>
+           <string>Seleziona tutto</string>
           </property>
          </widget>
         </item>
@@ -61,217 +42,23 @@
           </property>
          </widget>
         </item>
-        <item row="6" column="0">
-         <widget class="QProgressBar" name="iterProgressBar">
-          <property name="value">
-           <number>0</number>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
+        <item row="1" column="1">
+         <widget class="QPushButton" name="unselectAllRulesPushButton">
+          <property name="text">
+           <string>Deseleziona tutto</string>
           </property>
          </widget>
         </item>
-        <item row="4" column="0">
-         <widget class="QGroupBox" name="Out_RuleReportPointGroupBox">
-          <property name="title">
-           <string>Errore puntuale</string>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_3">
-           <item row="0" column="2">
-            <widget class="QPushButton" name="zoomPoint2PushButton">
-             <property name="text">
-              <string>Zoom punto 2</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="2">
-            <widget class="QPushButton" name="fixPoint2PushButton">
-             <property name="text">
-              <string>Fix punto 2</string>
-             </property>
-             <property name="icon">
-              <iconset resource="resources.qrc">
-               <normaloff>:/plugins/prg_dig/fix.png</normaloff>:/plugins/prg_dig/fix.png</iconset>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QPushButton" name="fixPoint1PushButton">
-             <property name="text">
-              <string>Fix punto 1</string>
-             </property>
-             <property name="icon">
-              <iconset resource="resources.qrc">
-               <normaloff>:/plugins/prg_dig/fix.png</normaloff>:/plugins/prg_dig/fix.png</iconset>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QPushButton" name="zoomPoint1PushButton">
-             <property name="text">
-              <string>Zoom punto 1</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0">
-            <widget class="QPushButton" name="zoomPointErrorPushButton">
-             <property name="text">
-              <string>Zoom errore</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0" colspan="3">
-            <widget class="QPushButton" name="ignorePointErrorPushButton">
-             <property name="text">
-              <string>Ignora errore</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
+        <item row="2" column="0" colspan="2">
+         <widget class="QTreeWidget" name="treeWidget">
+          <column>
+           <property name="text">
+            <string notr="true">1</string>
+           </property>
+          </column>
          </widget>
         </item>
-        <item row="3" column="0">
-         <widget class="QGroupBox" name="Out_RuleReportLineGroupBox">
-          <property name="title">
-           <string>Errore lineare</string>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_2">
-           <item row="2" column="5">
-            <widget class="QPushButton" name="zoomLine2PushButton">
-             <property name="text">
-              <string>Zoom linea 2</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="5">
-            <widget class="QLineEdit" name="lunghezzaLinea2LineEdit">
-             <property name="alignment">
-              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-             </property>
-             <property name="readOnly">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="4">
-            <widget class="QPushButton" name="fixLine1PushButton">
-             <property name="text">
-              <string>Fix linea 1</string>
-             </property>
-             <property name="icon">
-              <iconset resource="resources.qrc">
-               <normaloff>:/plugins/prg_dig/fix.png</normaloff>:/plugins/prg_dig/fix.png</iconset>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="4">
-            <widget class="QPushButton" name="zoomLine1PushButton">
-             <property name="text">
-              <string>Zoom linea 1</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="4">
-            <widget class="QLineEdit" name="lunghezzaLinea1LineEdit">
-             <property name="alignment">
-              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-             </property>
-             <property name="readOnly">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="5">
-            <widget class="QPushButton" name="fixLine2PushButton">
-             <property name="text">
-              <string>Fix linea 2</string>
-             </property>
-             <property name="icon">
-              <iconset resource="resources.qrc">
-               <normaloff>:/plugins/prg_dig/fix.png</normaloff>:/plugins/prg_dig/fix.png</iconset>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="label_2">
-             <property name="text">
-              <string>Lunghezza</string>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="2" colspan="4">
-            <widget class="QPushButton" name="ignoreLineErrorPushButton">
-             <property name="text">
-              <string>Ignora errore</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="2" colspan="2">
-            <widget class="QPushButton" name="zoomLineErrorPushButton">
-             <property name="text">
-              <string>Zoom errore</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="2" colspan="2">
-            <widget class="QLineEdit" name="lunghezzaLineEdit">
-             <property name="alignment">
-              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-             </property>
-             <property name="readOnly">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item row="5" column="0">
-         <widget class="QGroupBox" name="Out_RuleReportAttributesGroupBox">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="title">
-           <string>Errore attributo</string>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_5">
-           <item row="3" column="0" colspan="3">
-            <widget class="QPushButton" name="ignoreAttributeErrorPushButton">
-             <property name="text">
-              <string>Ignora errore</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0" colspan="3">
-            <widget class="QTextBrowser" name="ErrorText">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="maximumSize">
-              <size>
-               <width>16777215</width>
-               <height>100</height>
-              </size>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0" colspan="3">
-            <widget class="QLabel" name="ErrorType">
-             <property name="text">
-              <string>Tipo errore</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item row="2" column="0">
+        <item row="4" column="0" colspan="2">
          <widget class="QGroupBox" name="Out_RuleReportPolyGroupBox">
           <property name="title">
            <string>Errore poligonale</string>
@@ -402,6 +189,233 @@
             </widget>
            </item>
           </layout>
+         </widget>
+        </item>
+        <item row="5" column="0" colspan="2">
+         <widget class="QGroupBox" name="Out_RuleReportLineGroupBox">
+          <property name="title">
+           <string>Errore lineare</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_2">
+           <item row="2" column="5">
+            <widget class="QPushButton" name="zoomLine2PushButton">
+             <property name="text">
+              <string>Zoom linea 2</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="5">
+            <widget class="QLineEdit" name="lunghezzaLinea2LineEdit">
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="4">
+            <widget class="QPushButton" name="fixLine1PushButton">
+             <property name="text">
+              <string>Fix linea 1</string>
+             </property>
+             <property name="icon">
+              <iconset resource="resources.qrc">
+               <normaloff>:/plugins/prg_dig/fix.png</normaloff>:/plugins/prg_dig/fix.png</iconset>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="4">
+            <widget class="QPushButton" name="zoomLine1PushButton">
+             <property name="text">
+              <string>Zoom linea 1</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="4">
+            <widget class="QLineEdit" name="lunghezzaLinea1LineEdit">
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="5">
+            <widget class="QPushButton" name="fixLine2PushButton">
+             <property name="text">
+              <string>Fix linea 2</string>
+             </property>
+             <property name="icon">
+              <iconset resource="resources.qrc">
+               <normaloff>:/plugins/prg_dig/fix.png</normaloff>:/plugins/prg_dig/fix.png</iconset>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="label_2">
+             <property name="text">
+              <string>Lunghezza</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="2" colspan="4">
+            <widget class="QPushButton" name="ignoreLineErrorPushButton">
+             <property name="text">
+              <string>Ignora errore</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="2" colspan="2">
+            <widget class="QPushButton" name="zoomLineErrorPushButton">
+             <property name="text">
+              <string>Zoom errore</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="2" colspan="2">
+            <widget class="QLineEdit" name="lunghezzaLineEdit">
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="6" column="0" colspan="2">
+         <widget class="QGroupBox" name="Out_RuleReportPointGroupBox">
+          <property name="title">
+           <string>Errore puntuale</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_3">
+           <item row="0" column="2">
+            <widget class="QPushButton" name="zoomPoint2PushButton">
+             <property name="text">
+              <string>Zoom punto 2</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="2">
+            <widget class="QPushButton" name="fixPoint2PushButton">
+             <property name="text">
+              <string>Fix punto 2</string>
+             </property>
+             <property name="icon">
+              <iconset resource="resources.qrc">
+               <normaloff>:/plugins/prg_dig/fix.png</normaloff>:/plugins/prg_dig/fix.png</iconset>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QPushButton" name="fixPoint1PushButton">
+             <property name="text">
+              <string>Fix punto 1</string>
+             </property>
+             <property name="icon">
+              <iconset resource="resources.qrc">
+               <normaloff>:/plugins/prg_dig/fix.png</normaloff>:/plugins/prg_dig/fix.png</iconset>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QPushButton" name="zoomPoint1PushButton">
+             <property name="text">
+              <string>Zoom punto 1</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QPushButton" name="zoomPointErrorPushButton">
+             <property name="text">
+              <string>Zoom errore</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0" colspan="3">
+            <widget class="QPushButton" name="ignorePointErrorPushButton">
+             <property name="text">
+              <string>Ignora errore</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="7" column="0" colspan="2">
+         <widget class="QGroupBox" name="Out_RuleReportAttributesGroupBox">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="title">
+           <string>Errore attributo</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_5">
+           <item row="3" column="0" colspan="3">
+            <widget class="QPushButton" name="ignoreAttributeErrorPushButton">
+             <property name="text">
+              <string>Ignora errore</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0" colspan="3">
+            <widget class="QTextBrowser" name="ErrorText">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>100</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0" colspan="3">
+            <widget class="QLabel" name="ErrorType">
+             <property name="text">
+              <string>Tipo errore</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="8" column="0" colspan="2">
+         <widget class="QProgressBar" name="iterProgressBar">
+          <property name="value">
+           <number>0</number>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="9" column="0" colspan="2">
+         <widget class="QProgressBar" name="ruleProgressBar">
+          <property name="value">
+           <number>0</number>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="10" column="0" colspan="2">
+         <widget class="QPushButton" name="startValidationPushButton">
+          <property name="text">
+           <string>Esegui validazione</string>
+          </property>
          </widget>
         </item>
        </layout>

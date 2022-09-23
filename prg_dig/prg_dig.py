@@ -258,7 +258,6 @@ class PrgDig:
     #--------------------------------------------------------------------------
 
     def initialize(self):
-        
       
         self.callStack = []
 
@@ -291,6 +290,9 @@ class PrgDig:
          # connessione eventi di cambio progetto
         self.iface.newProjectCreated.connect(self.newProjectCreated)
         self.iface.projectRead.connect(self.projectRead)
+
+        self.dockwidget.selectAllRulesPushButton.clicked.connect(self.selectAllRules)
+        self.dockwidget.unselectAllRulesPushButton.clicked.connect(self.unselectAllRules)
 
          # connessione eventi UI
         self.dockwidget.treeWidget.itemChanged.connect(self.iterItemChanged)
@@ -333,16 +335,36 @@ class PrgDig:
         self.dockwidget.ignorePointErrorPushButton.clicked.connect(self.ignoreCurrentError)
         self.dockwidget.removeIgnoredErrorPushButton.clicked.connect(self.removeIgnoredErrorPushButton)
       
+        if not self.canExecute():
+            return;
 
+        self.caricaTemplate()
+        self.dockwidget.ignoredErrorsTableView.horizontalHeader().sectionResized.connect (self.sectionResized)
+
+    def canExecute(self):
         if os.path.isfile(self.spatialiteTemplateName) == False:
             # il plugin non può essere usato senza un template valido
             QgsMessageLog.logMessage('Plugin disabilitato causa mancanza del file template')
             self.dockwidget.tabWidget.setEnabled(False)
-            return
+            return False
 
-        self.caricaTemplate()
-        self.dockwidget.ignoredErrorsTableView.horizontalHeader().sectionResized.connect (self.sectionResized)
-    
+        conn = self.getConnection()
+        prj_version :str = ''
+        try:
+            result = conn.execute('SELECT DBVersion FROM VersionInfo').fetchone()
+            prj_version = result['DBVersion']
+            if prj_version <= '1.2.0.0':
+                QMessageBox.critical(None,'Prg_dig','Plugin disabilitato. La versione ({}) del progetto è incompatibile con il plugin'.format(prj_version))
+                return False
+
+        except Exception as e:
+            QMessageBox.critical(None,'Prg_dig','Plugin disabilitato. La versione del database del progetto non è determinabile ' + str(e))
+            self.dockwidget.tabWidget.setEnabled(False)
+            return False
+        finally:
+            conn.close()
+        return True
+
     def removeIgnoredErrorPushButton(self):
         self.logFunctionStart()
         if QMessageBox.question(None,'Errori Ignorati','Confermi il ripristiono degli errori ignorati selezionati?') != QMessageBox.Yes:
@@ -474,11 +496,7 @@ class PrgDig:
         # elimina eventuali dati caricati precedentemente
         self.dockwidget.treeWidget.clear()
 
-        if os.path.isfile(self.spatialiteTemplateName) == False:
-            # il plugin non può essere usato senza un template valido
-            QgsMessageLog.logMessage('Plugin disabilitato causa mancanza del file template')
-            
-            self.dockwidget.tabWidget.setEnabled(False)
+        if not self.canExecute():
             return
 
         self.dockwidget.tabWidget.setEnabled(True)
@@ -546,6 +564,9 @@ class PrgDig:
     def caricaTemplate(self):
         """Caricamento dei dati dal template"""
 
+        # elimina eventuali dati caricati precedentemente
+        self.dockwidget.treeWidget.clear()
+
         # connessione usata per caricare i dati
         try:
             conn = self.getConnection()
@@ -563,7 +584,7 @@ class PrgDig:
             iter_item = QtWidgets.QTreeWidgetItem([the_iter['Nome']])
             self.dockwidget.treeWidget.addTopLevelItem(iter_item)
             regole = conn.execute((
-                'SELECT DISTINCT Regole.Oid,Regole.Nome,Regole.Esegui,Regole.OutReportTableName,TipiRegola.Nome AS TipoRegola,Regole.ErroriIgnorabili '
+                'SELECT DISTINCT Regole.Oid,Regole.Nome,Regole.Esegui,Regole.EsecuzioneObbligatoria,Regole.OutReportTableName,TipiRegola.Nome AS TipoRegola,Regole.ErroriIgnorabili '
                 'FROM ValidationSteps '
                 'INNER JOIN Regole ON ValidationSteps.OidRegola = Regole.Oid '
                 'INNER JOIN IterValidazione ON Regole.OidIter = IterValidazione.Oid '
@@ -573,8 +594,11 @@ class PrgDig:
                 QgsMessageLog.logMessage('Popolamento elenco regole ' + regola['Nome'])
                 regola_Item = QtWidgets.QTreeWidgetItem([regola['Nome']])
                 regola_Item.setData(0,Qt.UserRole,'Rule' + ';' + str(regola['Oid']))
-                regola_Item.setFlags(regola_Item.flags() | Qt.ItemIsUserCheckable)
-                if regola['Esegui']:
+                if regola['EsecuzioneObbligatoria'] == 0:
+                    regola_Item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsUserCheckable)
+                else:
+                    regola_Item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+                if regola['Esegui'] == 1 or regola['EsecuzioneObbligatoria'] == 1:
                      regola_Item.setCheckState(0, Qt.Checked)
                 else:
                      regola_Item.setCheckState(0, Qt.Unchecked)
@@ -608,6 +632,7 @@ class PrgDig:
                 else:
                     regola_Item.setText(1,'')
                     regola_Item.setData(0,Qt.ForegroundRole,QBrush(QColor('green')))
+            iter_item.setExpanded(True)
              
         conn.close()
 
@@ -981,8 +1006,25 @@ class PrgDig:
             self.dockwidget.Out_RuleReportLineGroupBox.setVisible(False)
             self.dockwidget.Out_RuleReportPointGroupBox.setVisible(False)
 
-    def iterItemChanged(self,item,column):
+    def selectAllRules(self):
+        if self.validating:
+            return
+        conn = self.getConnection()
+        conn.execute('UPDATE Regole SET Esegui = 1')
+        conn.commit()
+        conn.close()
+        self.caricaTemplate()
 
+    def unselectAllRules(self):
+        if self.validating:
+            return
+        conn = self.getConnection()
+        conn.execute('UPDATE Regole SET Esegui = 0 OR EsecuzioneObbligatoria')
+        conn.commit()
+        conn.close()
+        self.caricaTemplate()
+    
+    def iterItemChanged(self,item,column):
         if self.validating:
             return
         userData = item.data(0,Qt.UserRole)
@@ -994,7 +1036,7 @@ class PrgDig:
             if item.checkState(0) == Qt.Checked:
                 conn.execute('UPDATE Regole SET Esegui = 1 WHERE Oid = ' + oid)
             else:
-                conn.execute('UPDATE Regole SET Esegui = 0 WHERE Oid = ' + oid)
+                conn.execute('UPDATE Regole SET Esegui = 0 OR EsecuzioneObbligatoria WHERE Oid = ' + oid)
             conn.commit()
             conn.close()
 

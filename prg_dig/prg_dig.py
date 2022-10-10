@@ -196,6 +196,59 @@ class PrgDig:
         # disconnects
         self.dockwidget.closingPlugin.disconnect(self.onClosePlugin)
 
+        self.iface.newProjectCreated.disconnect(self.newProjectCreated)
+        self.iface.projectRead.disconnect(self.projectRead)
+
+        self.dockwidget.selectAllRulesPushButton.clicked.disconnect(self.selectAllRules)
+        self.dockwidget.unselectAllRulesPushButton.clicked.disconnect(self.unselectAllRules)
+
+         # connessione eventi UI
+        self.dockwidget.treeWidget.itemChanged.disconnect(self.iterItemChanged)
+        self.dockwidget.treeWidget.currentItemChanged.disconnect(self.currentIterItemChanged)
+
+        # polygon error handling
+        self.dockwidget.zoomPolyErrorPushButton.clicked.disconnect(self.zoomGeom)
+        
+        self.dockwidget.zoomPoly1PushButton.clicked.disconnect(self.zoomGeom1)
+        self.dockwidget.fixPoly1PushButton.clicked.disconnect(self.fixGeom1)
+
+        self.dockwidget.zoomPoly2PushButton.clicked.disconnect(self.zoomGeom2)
+        self.dockwidget.fixPoly2PushButton.clicked.disconnect(self.fixGeom2)
+
+        # line error handling
+        self.dockwidget.zoomLineErrorPushButton.clicked.disconnect(self.zoomGeom)
+        self.dockwidget.zoomLine1PushButton.clicked.disconnect(self.zoomGeom1)
+        self.dockwidget.fixLine1PushButton.clicked.disconnect(self.fixGeom1)
+
+        self.dockwidget.zoomLine2PushButton.clicked.disconnect(self.zoomGeom2)
+        self.dockwidget.fixLine2PushButton.clicked.disconnect(self.fixGeom2)
+
+        # point error handling
+        self.dockwidget.zoomPointErrorPushButton.clicked.disconnect(self.zoomGeom)
+        self.dockwidget.zoomPoint1PushButton.clicked.disconnect(self.zoomGeom1)
+        self.dockwidget.fixPoint1PushButton.clicked.disconnect(self.fixGeom1)
+
+        self.dockwidget.zoomPoint2PushButton.clicked.connect(self.zoomGeom2)
+        self.dockwidget.fixPoint2PushButton.clicked.disconnect(self.fixGeom2)
+
+        # validation button
+        self.dockwidget.startValidationPushButton.clicked.disconnect(self.startValidationButtonClicked)
+
+        # cambio tab (validazione,errori ignorati, navigatore dati)
+        self.dockwidget.tabWidget.currentChanged.disconnect(self.tabChanged)
+
+        self.dockwidget.ignoreAttributeErrorPushButton.clicked.disconnect(self.ignoreCurrentError)
+        self.dockwidget.ignorePolyErrorPushButton.clicked.disconnect(self.ignoreCurrentError)
+        self.dockwidget.ignoreLineErrorPushButton.clicked.disconnect(self.ignoreCurrentError)
+        self.dockwidget.ignorePointErrorPushButton.clicked.disconnect(self.ignoreCurrentError)
+        self.dockwidget.removeIgnoredErrorPushButton.clicked.disconnect(self.removeIgnoredErrorPushButton)
+      
+        try: 
+            # il segnale potrebbe non essere connesso
+            self.dockwidget.ignoredErrorsTableView.horizontalHeader().sectionResized.disconnect(self.sectionResized)
+        except:
+            pass
+
         # remove this statement if dockwidget is to remain
         # for reuse if plugin is reopened
         # Commented next statement since it causes QGIS crashe

@@ -942,13 +942,15 @@ class PrgDig:
         elif table == 'Out_RuleReportLine':
             command = (
                 'SELECT Oid,OidRegola,OidArea1,OidGeom1,LunghezzaLinea1,OidArea2,OidGeom2,LunghezzaLinea2,'
-                'LunghezzaLinea,Messaggio,TipoMessaggio,FixGeom1SQLcommand,FixGeom2SQLcommand,FixErrorMessage,'
+                'LunghezzaLinea,Geom IS NOT NULL AS GeomIsNotNull,'
+                'Messaggio,TipoMessaggio,FixGeom1SQLcommand,FixGeom2SQLcommand,FixErrorMessage,'
                 "'" + table + "' AS TableName "
                 'FROM ' + table + ' WHERE Oid = ' + oid)
-            
+            QgsMessageLog.logMessage(command)
             self.selectedError = conn.execute(command).fetchone()
             oidArea = self.selectedError['OidArea1']
             oidGeom = self.selectedError['OidGeom1']
+            geomIsNotNull = self.selectedError['GeomIsNotNull']
             self.dockwidget.fixLine1PushButton.setText(self.selectedError['FixErrorMessage'])
             self.dockwidget.fixLine2PushButton.setText(self.selectedError['FixErrorMessage'])
             self.dockwidget.fixLine1PushButton.setEnabled(self.selectedError['FixGeom1SQLcommand'] != None)
@@ -963,16 +965,22 @@ class PrgDig:
             if (self.selectedError['LunghezzaLinea2'] != None):
                 self.dockwidget.lunghezzaLinea2LineEdit.setText(format(self.selectedError['LunghezzaLinea2'],'g'))
 
+            # zoom sulla eventuale geometria generata dalla regola di errore
+            # nel caso non ci sia un area specifica
+            if oidArea == None and geomIsNotNull:
+                zoomCoord = conn.execute('SELECT MbrMinX(geom) AS XMin,MbrMinY(geom) AS YMin,MbrMaxX(geom) AS XMax,MbrMaxY(geom) AS YMax FROM ' + table + ' WHERE Oid = ' + oid).fetchone()
+
         elif table == 'Out_RuleReportPoint':
             command = (
                 'SELECT Oid,OidRegola,OidArea1,OidGeom1,OidArea2,OidGeom2,Messaggio,TipoMessaggio,'
-                'FixGeom1SQLcommand,FixGeom2SQLcommand,FixErrorMessage,'
+                'Geom IS NOT NULL AS GeomIsNotNull,FixGeom1SQLcommand,FixGeom2SQLcommand,FixErrorMessage,'
                 "'" + table + "' AS TableName "
                 'FROM ' + table + ' WHERE Oid = ' + oid)
             
             self.selectedError = conn.execute(command).fetchone()
             oidArea = self.selectedError['OidArea1']
-            oidGeom = self.selectedError['OidGeom1']   
+            oidGeom = self.selectedError['OidGeom1']
+            geomIsNotNull = self.selectedError['GeomIsNotNull'] 
             self.dockwidget.fixPoint1PushButton.setText(self.selectedError['FixErrorMessage'])
             self.dockwidget.fixPoint2PushButton.setText(self.selectedError['FixErrorMessage'])
             self.dockwidget.fixPoint1PushButton.setEnabled(self.selectedError['FixGeom1SQLcommand'] != None)
@@ -980,7 +988,12 @@ class PrgDig:
             self.dockwidget.zoomPoint1PushButton.setEnabled(self.selectedError['OidArea1'] != None)
             self.dockwidget.zoomPoint2PushButton.setEnabled(self.selectedError['OidArea2'] != None)
 
-        # eventuale zoom sulla geometria
+            # zoom sulla eventuale geometria generata dalla regola di errore
+            # nel caso non ci sia un area specifica
+            if oidArea == None and geomIsNotNull:
+                zoomCoord = conn.execute('SELECT MbrMinX(geom) AS XMin,MbrMinY(geom) AS YMin,MbrMaxX(geom) AS XMax,MbrMaxY(geom) AS YMax FROM ' + table + ' WHERE Oid = ' + oid).fetchone()
+
+        # eventuale zoom sulla geometria con selezione del layer corrispondente
         if oidArea != None:
             self.zoomToGeom(conn,oidArea,oidGeom)
 
@@ -1003,6 +1016,7 @@ class PrgDig:
         layer.selectByIds([oid])
         r = QgsRectangle(rectangle['XMin'], rectangle['YMin'], rectangle['XMax'], rectangle['YMax'])
         self.iface.mapCanvas().setExtent(r,True)
+        self.iface.mapCanvas().refresh()
 
     def zoomToGeom(self,conn,oidArea,oidGeom):
         QgsMessageLog.logMessage('zoomToGeom (oidArea=' + str(oidArea) + ',OidGeom=' + str(oidGeom) + ')')

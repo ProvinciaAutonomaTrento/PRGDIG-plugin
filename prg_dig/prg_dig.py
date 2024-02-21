@@ -242,7 +242,7 @@ class PrgDig:
         self.dockwidget.ignoreLineErrorPushButton.clicked.disconnect(self.ignoreCurrentError)
         self.dockwidget.ignorePointErrorPushButton.clicked.disconnect(self.ignoreCurrentError)
         self.dockwidget.removeIgnoredErrorPushButton.clicked.disconnect(self.removeIgnoredErrorPushButton)
-      
+        self.dockwidget.stampaCSconDTcheckBox.stateChanged.disconnect(self.StampaCSconTAStateChanged)
         try: 
             # il segnale potrebbe non essere connesso
             self.dockwidget.ignoredErrorsTableView.horizontalHeader().sectionResized.disconnect(self.sectionResized)
@@ -330,7 +330,7 @@ class PrgDig:
         self.dockwidget.iterProgressBar.setVisible(False)
         self.dockwidget.ruleProgressBar.setVisible(False)
 
-         # configurazioen del tree di visualizzazione errori
+         # configurazione del tree di visualizzazione errori
         self.dockwidget.treeWidget.setColumnCount(2)
         self.dockwidget.treeWidget.setHeaderLabels(['Regola',"Errori"])
         # configure header https://doc.qt.io/qt-5/qheaderview.html
@@ -387,6 +387,7 @@ class PrgDig:
         self.dockwidget.ignoreLineErrorPushButton.clicked.connect(self.ignoreCurrentError)
         self.dockwidget.ignorePointErrorPushButton.clicked.connect(self.ignoreCurrentError)
         self.dockwidget.removeIgnoredErrorPushButton.clicked.connect(self.removeIgnoredErrorPushButton)
+        self.dockwidget.stampaCSconDTcheckBox.stateChanged.connect(self.StampaCSconTAStateChanged)
       
         if not self.canExecute():
             return;
@@ -686,7 +687,12 @@ class PrgDig:
                     regola_Item.setText(1,'')
                     regola_Item.setData(0,Qt.ForegroundRole,QBrush(QColor('green')))
             iter_item.setExpanded(True)
-             
+
+        incarico = conn.execute('SELECT StampaCSConTA, TipoCartografia FROM Incarichi').fetchone()
+
+        self.dockwidget.stampaCSconDTcheckBox.setChecked(incarico['StampaCSConTA'])
+        # abilitato solo se l'incarico TA + CS
+        self.dockwidget.setEnabled(incarico['TipoCartografia'] == 0)
         conn.close()
 
     def tabChanged(self, tabIndex):
@@ -1282,7 +1288,7 @@ class PrgDig:
     def print_output(self, s):
         QgsMessageLog.logMessage(s)
         
-    def thread_complete(self):
+    def thread_complete(self, s):
         self.validating = False
         self.dockwidget.iterProgressBar.setVisible(False)
         self.dockwidget.ruleProgressBar.setVisible(False)
@@ -1294,4 +1300,23 @@ class PrgDig:
             QMessageBox.information(None,'Validazione','Validazione terminata!')
         else:
             QMessageBox.critical(None,'Validazione','Validazione terminata con ' + str (self.validationFatalErrors) + ' errori bloccanti')
+    
+    def StampaCSconTAStateChanged(self, s):
+        
+        conn = self.getConnection()
+        if s == Qt.Checked:
+            conn.execute('UPDATE Incarichi SET StampaCSconTA = 1')
+        else:
+            conn.execute('UPDATE Incarichi SET StampaCSconTA = 0')
+        conn.commit()
+        conn.close()
+        layer = QgsProject.instance().mapLayersByName('tavole')[0]
+        layer.triggerRepaint()
+        layer = QgsProject.instance().mapLayersByName('tavole_centro_storico')[0]
+        layer.triggerRepaint()
+        layer = QgsProject.instance().mapLayersByName('tavole_centro_storico')[0]
+        layer.triggerRepaint()
+        layer = QgsProject.instance().mapLayersByName('tavole_raffronto_centro_storico')[0]
+        layer.triggerRepaint()
+        return True
   

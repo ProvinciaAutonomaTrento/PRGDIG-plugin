@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>468</width>
-    <height>1024</height>
+    <height>1065</height>
    </rect>
   </property>
   <property name="locale">
@@ -21,7 +21,7 @@
     <item row="0" column="1">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="validationTab">
        <attribute name="title">
@@ -437,13 +437,24 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="dataNavigationTab">
+      <widget class="QWidget" name="impostazioniTab">
        <attribute name="title">
-        <string>Navigatore dati</string>
+        <string>Impostazioni</string>
        </attribute>
-       <layout class="QGridLayout" name="gridLayout_7">
+       <layout class="QFormLayout" name="formLayout_7">
         <item row="0" column="0">
-         <widget class="QTreeView" name="dataNavigationTreeView"/>
+         <widget class="QLabel" name="stampaCSLabel">
+          <property name="text">
+           <string>Stampa centri storici (CS) sulle tavole del sistema insediativo</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QCheckBox" name="stampaCSconDTcheckBox">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>

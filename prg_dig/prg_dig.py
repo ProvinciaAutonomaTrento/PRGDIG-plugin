@@ -407,7 +407,7 @@ class PrgDig:
         try:
             result = conn.execute('SELECT DBVersion FROM VersionInfo').fetchone()
             prj_version = result['DBVersion']
-            if prj_version <= '1.2.0.0':
+            if prj_version < '1.2.3.0':
                 QMessageBox.critical(None,'Prg_dig','Plugin disabilitato. La versione ({}) del progetto è incompatibile con il plugin'.format(prj_version))
                 return False
 
@@ -1145,7 +1145,7 @@ class PrgDig:
                     progress_callback.emit(CallBackInfo('Step',step['Oid'],'Begin'))
                     try:
                         result = conn.executescript(step['SQLCommand'])
-                        stepValue = stepValue + stepIncrement
+                        stepValue = int(round(stepValue + stepIncrement,0))
                         progress_callback.emit(CallBackInfo('Rule',regola['Oid'],'Progress',stepValue))
                     except Exception as e:
                         progress_callback.emit(CallBackInfo('Step',step['Oid'],'UnexpectedError'))
@@ -1154,7 +1154,7 @@ class PrgDig:
 
                     progress_callback.emit(CallBackInfo('Step',step['Oid'],'End'))
 
-                ruleValue = ruleValue + ruleIncrement
+                ruleValue = int(round(ruleValue + ruleIncrement,0))
                 progress_callback.emit(CallBackInfo('Iter',the_iter['Oid'],'Progress',ruleValue))
                 progress_callback.emit(CallBackInfo('Rule',regola['Oid'],'End',0))
 
@@ -1288,7 +1288,7 @@ class PrgDig:
     def print_output(self, s):
         QgsMessageLog.logMessage(s)
         
-    def thread_complete(self, s):
+    def thread_complete(self):
         self.validating = False
         self.dockwidget.iterProgressBar.setVisible(False)
         self.dockwidget.ruleProgressBar.setVisible(False)
@@ -1312,11 +1312,19 @@ class PrgDig:
         conn.close()
         layer = QgsProject.instance().mapLayersByName('tavole')[0]
         layer.triggerRepaint()
-        layer = QgsProject.instance().mapLayersByName('tavole_centro_storico')[0]
+        layer = QgsProject.instance().mapLayersByName('tavole_insediativo')[0]
+        layer.triggerRepaint()
+        layer = QgsProject.instance().mapLayersByName('tavole_raffronto_insediativo')[0]
+        layer.triggerRepaint()
+        layer = QgsProject.instance().mapLayersByName('tavole_ambientale')[0]
+        layer.triggerRepaint()
+        layer = QgsProject.instance().mapLayersByName('tavole_raffronto_ambientale')[0]
         layer.triggerRepaint()
         layer = QgsProject.instance().mapLayersByName('tavole_centro_storico')[0]
         layer.triggerRepaint()
         layer = QgsProject.instance().mapLayersByName('tavole_raffronto_centro_storico')[0]
+        layer.triggerRepaint()
+        layer = QgsProject.instance().mapLayersByName('tavole_csp')[0]
         layer.triggerRepaint()
         return True
   
